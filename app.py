@@ -45,18 +45,32 @@ performance_history = {
 @app.route('/')
 def dashboard():
     """Main dashboard route"""
+    api_error = None
+    trades = []
+    account_info = {'balance': 0, 'unrealizedPL': 0, 'marginUsed': 0}
+    
     try:
         oanda_client = OandaClient()  # Create new instance for each request
-        trades = oanda_client.get_open_trades()
-        account_info = oanda_client.get_account_info()
-        return render_template('dashboard.html', 
-                            trades=trades or [],
-                            account_info=account_info or {'balance': 0, 'unrealizedPL': 0, 'marginUsed': 0})
+        if not oanda_client.verify_connection():
+            api_error = "Unable to establish connection with OANDA API. Please verify your credentials."
+        else:
+            trades = oanda_client.get_open_trades()
+            account_info = oanda_client.get_account_info()
+            
+            if not account_info:
+                api_error = "Connected to OANDA API but unable to fetch account information."
+                
+    except ValueError as e:
+        api_error = str(e)
+        logger.error(f"OANDA client initialization error: {str(e)}")
     except Exception as e:
+        api_error = "An unexpected error occurred while connecting to OANDA API."
         logger.error(f"Dashboard error: {str(e)}")
-        return render_template('dashboard.html',
-                            trades=[],
-                            account_info={'balance': 0, 'unrealizedPL': 0, 'marginUsed': 0})
+    
+    return render_template('dashboard.html',
+                         trades=trades or [],
+                         account_info=account_info or {'balance': 0, 'unrealizedPL': 0, 'marginUsed': 0},
+                         api_error=api_error)
 
 with app.app_context():
     import models

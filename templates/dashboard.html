@@ -2,13 +2,29 @@
 
 {% block content %}
 <div class="row">
+    <div class="col-12">
+        {% if api_error %}
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Connection Status: Offline</h4>
+            <p>{{ api_error }}</p>
+            <hr>
+            <p class="mb-0">Please check your OANDA API credentials and try again.</p>
+        </div>
+        {% endif %}
+    </div>
+    
     <div class="col-md-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Account Overview</h5>
-                <p class="card-text">Balance: ${{ account_info.balance }}</p>
-                <p class="card-text">Unrealized P/L: ${{ account_info.unrealizedPL }}</p>
-                <p class="card-text">Margin Used: ${{ account_info.marginUsed }}</p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Account Overview</h5>
+                    <span class="badge {% if api_error %}bg-danger{% else %}bg-success{% endif %}">
+                        {{ 'Offline' if api_error else 'Connected' }}
+                    </span>
+                </div>
+                <p class="card-text">Balance: ${{ "%.2f"|format(account_info.balance|float) }}</p>
+                <p class="card-text">Unrealized P/L: ${{ "%.2f"|format(account_info.unrealizedPL|float) }}</p>
+                <p class="card-text">Margin Used: ${{ "%.2f"|format(account_info.marginUsed|float) }}</p>
             </div>
         </div>
     </div>
@@ -28,6 +44,7 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Open Trades</h5>
+                {% if trades %}
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -35,7 +52,6 @@
                                 <th>Instrument</th>
                                 <th>Units</th>
                                 <th>Entry Price</th>
-                                <th>Current Price</th>
                                 <th>Unrealized P/L</th>
                                 <th>Actions</th>
                             </tr>
@@ -45,9 +61,10 @@
                             <tr>
                                 <td>{{ trade.instrument }}</td>
                                 <td>{{ trade.currentUnits }}</td>
-                                <td>{{ trade.price }}</td>
-                                <td>{{ trade.currentPrice }}</td>
-                                <td>{{ trade.unrealizedPL }}</td>
+                                <td>{{ "%.5f"|format(trade.price|float) }}</td>
+                                <td class="{{ 'text-success' if trade.unrealizedPL|float > 0 else 'text-danger' }}">
+                                    ${{ "%.2f"|format(trade.unrealizedPL|float) }}
+                                </td>
                                 <td>
                                     <button class="btn btn-danger btn-sm" onclick="closeTrade('{{ trade.id }}')">
                                         Close
@@ -58,6 +75,15 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    {% if api_error %}
+                    Unable to fetch open trades due to connection issues.
+                    {% else %}
+                    No open trades at the moment.
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

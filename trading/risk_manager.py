@@ -152,3 +152,65 @@ class RiskManager:
         
         # Recalculate daily PnL
         self.daily_pnl = sum(trade['pnl'] for trade in self.daily_trades)
+
+    def _calculate_market_risk(self):
+        """Calculate market risk score (0-100)"""
+        try:
+            # Use volatility and current exposure
+            volatility_risk = self.last_volatility * 100 if self.last_volatility else 50
+            exposure_risk = len(self.daily_trades) / self.max_trades_per_day * 100
+            
+            market_risk = (volatility_risk + exposure_risk) / 2
+            return min(market_risk, 100)
+        except Exception as e:
+            logger.error(f"Error calculating market risk: {str(e)}")
+            return 50
+
+    def _calculate_leverage_risk(self):
+        """Calculate leverage risk score (0-100)"""
+        try:
+            if not self.trade_history:
+                return 0
+            
+            # Calculate average position size relative to account
+            avg_position_size = np.mean([abs(trade['pnl']) for trade in self.daily_trades]) if self.daily_trades else 0
+            leverage_risk = (avg_position_size / self.max_risk_per_trade) * 100
+            
+            return min(leverage_risk, 100)
+        except Exception as e:
+            logger.error(f"Error calculating leverage risk: {str(e)}")
+            return 0
+
+    def _calculate_correlation_risk(self):
+        """Calculate correlation risk score (0-100)"""
+        try:
+            if len(self.daily_trades) < 2:
+                return 0
+            
+            # Calculate correlation between recent trades
+            returns = [trade['pnl'] for trade in self.daily_trades]
+            if len(returns) >= 2:
+                correlation = np.corrcoef(returns[:-1], returns[1:])[0, 1]
+                correlation_risk = abs(correlation) * 100
+                return min(correlation_risk, 100)
+            return 0
+        except Exception as e:
+            logger.error(f"Error calculating correlation risk: {str(e)}")
+            return 0
+
+    def _calculate_volatility_risk(self):
+        """Calculate volatility risk score (0-100)"""
+        try:
+            if not self.trade_history:
+                return 50  # Default medium risk when no data
+                
+            # Calculate returns volatility
+            returns = [trade['pnl'] for trade in self.daily_trades]
+            if returns:
+                volatility = np.std(returns) * np.sqrt(252)  # Annualized volatility
+                volatility_risk = min(volatility * 100, 100)  # Scale to 0-100
+                return volatility_risk
+            return 50
+        except Exception as e:
+            logger.error(f"Error calculating volatility risk: {str(e)}")
+            return 50

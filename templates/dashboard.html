@@ -14,7 +14,7 @@
     </div>
     
     <div class="col-md-4">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="card-title mb-0">Account Overview</h5>
@@ -27,19 +27,74 @@
                 <p class="card-text">Margin Used: ${{ "%.2f"|format(account_info.marginUsed|float) }}</p>
             </div>
         </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Trading Statistics</h5>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Win Rate
+                        <span class="badge bg-success">{{ "%.1f%%"|format(trading_metrics.win_rate|float) if trading_metrics.win_rate else 'N/A' }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Total Trades
+                        <span class="badge bg-primary">{{ trading_metrics.total_trades if trading_metrics.total_trades else '0' }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Profit Factor
+                        <span class="badge bg-info">{{ "%.2f"|format(trading_metrics.profit_factor|float) if trading_metrics.profit_factor else 'N/A' }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Sharpe Ratio
+                        <span class="badge bg-warning">{{ "%.2f"|format(trading_metrics.sharpe_ratio|float) if trading_metrics.sharpe_ratio else 'N/A' }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Max Drawdown
+                        <span class="badge bg-danger">{{ "%.1f%%"|format(trading_metrics.max_drawdown|float) if trading_metrics.max_drawdown else 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="col-md-8">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Performance Chart</h5>
                 <canvas id="performanceChart"></canvas>
             </div>
         </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Daily P/L Distribution</h5>
+                <canvas id="pnlDistributionChart"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row mt-4">
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Win Rate by Instrument</h5>
+                <canvas id="winRateChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Risk Exposure</h5>
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
@@ -52,7 +107,9 @@
                                 <th>Instrument</th>
                                 <th>Units</th>
                                 <th>Entry Price</th>
+                                <th>Current Price</th>
                                 <th>Unrealized P/L</th>
+                                <th>Duration</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -62,9 +119,11 @@
                                 <td>{{ trade.instrument }}</td>
                                 <td>{{ trade.currentUnits }}</td>
                                 <td>{{ "%.5f"|format(trade.price|float) }}</td>
+                                <td>{{ "%.5f"|format(trade.currentPrice|float) if trade.currentPrice else 'N/A' }}</td>
                                 <td class="{{ 'text-success' if trade.unrealizedPL|float > 0 else 'text-danger' }}">
                                     ${{ "%.2f"|format(trade.unrealizedPL|float) }}
                                 </td>
+                                <td>{{ trade.duration if trade.duration else 'N/A' }}</td>
                                 <td>
                                     <button class="btn btn-danger btn-sm" onclick="closeTrade('{{ trade.id }}')">
                                         Close

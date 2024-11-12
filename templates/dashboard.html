@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Account Overview</h5>
+                <p class="card-text">Balance: ${{ account_info.balance }}</p>
+                <p class="card-text">Unrealized P/L: ${{ account_info.unrealizedPL }}</p>
+                <p class="card-text">Margin Used: ${{ account_info.marginUsed }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Performance Chart</h5>
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Open Trades</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Instrument</th>
+                                <th>Units</th>
+                                <th>Entry Price</th>
+                                <th>Current Price</th>
+                                <th>Unrealized P/L</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trade in trades %}
+                            <tr>
+                                <td>{{ trade.instrument }}</td>
+                                <td>{{ trade.currentUnits }}</td>
+                                <td>{{ trade.price }}</td>
+                                <td>{{ trade.currentPrice }}</td>
+                                <td>{{ trade.unrealizedPL }}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="closeTrade('{{ trade.id }}')">
+                                        Close
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

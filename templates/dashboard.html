@@ -13,18 +13,116 @@
         {% endif %}
     </div>
     
+    <!-- All Pairs Trading Signals -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Trading Signals</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Pair</th>
+                                <th>Prediction</th>
+                                <th>Trend Strength</th>
+                                <th>RSI</th>
+                                <th>Volatility</th>
+                                <th>ATR Ratio</th>
+                                <th>Current Price</th>
+                                <th>EMA</th>
+                                <th>SMA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if trading_signals.pairs %}
+                                {% for pair, signals in trading_signals.pairs.items() %}
+                                <tr>
+                                    <td>{{ pair }}</td>
+                                    <td>
+                                        {{ "%.3f"|format(signals.indicators.Prediction|float) if signals.indicators.Prediction else 'N/A' }}
+                                        {% if signals.indicators.Prediction %}
+                                            {% if signals.indicators.Prediction > 0.7 or signals.indicators.Prediction < 0.3 %}
+                                                <span class="text-success">✅</span>
+                                            {% else %}
+                                                <span class="text-danger">❌</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ "%.3f"|format(signals.indicators.Trend_Strength|float) if signals.indicators.Trend_Strength else 'N/A' }}
+                                        {% if signals.indicators.Trend_Strength %}
+                                            {% if signals.indicators.Trend_Strength > 0.6 %}
+                                                <span class="text-success">✅</span>
+                                            {% else %}
+                                                <span class="text-danger">❌</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ "%.2f"|format(signals.indicators.RSI|float) if signals.indicators.RSI else 'N/A' }}
+                                        {% if signals.indicators.RSI %}
+                                            {% if signals.indicators.RSI > 30 and signals.indicators.RSI < 70 %}
+                                                <span class="text-success">✅</span>
+                                            {% else %}
+                                                <span class="text-danger">❌</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ "%.5f"|format(signals.indicators.Volatility|float) if signals.indicators.Volatility else 'N/A' }}
+                                        {% if signals.indicators.Volatility %}
+                                            {% if signals.indicators.Volatility < 0.002 %}
+                                                <span class="text-success">✅</span>
+                                            {% else %}
+                                                <span class="text-danger">❌</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ "%.2f"|format(signals.indicators.ATR_Ratio|float) if signals.indicators.ATR_Ratio else 'N/A' }}
+                                        {% if signals.indicators.ATR_Ratio %}
+                                            {% if signals.indicators.ATR_Ratio < 1.5 %}
+                                                <span class="text-success">✅</span>
+                                            {% else %}
+                                                <span class="text-danger">❌</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ "%.5f"|format(signals.indicators.Current_Price|float) if signals.indicators.Current_Price else 'N/A' }}</td>
+                                    <td>{{ "%.5f"|format(signals.indicators.EMA|float) if signals.indicators.EMA else 'N/A' }}</td>
+                                    <td>{{ "%.5f"|format(signals.indicators.SMA|float) if signals.indicators.SMA else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="9" class="text-center">No trading signals available</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Last Update: {{ trading_signals.timestamp.astimezone().strftime('%Y-%m-%d %H:%M:%S %Z') if trading_signals.timestamp else 'Never' }}
+                    </small>
+                    <small class="text-muted">
+                        Next Update: {{ (trading_signals.timestamp + timedelta(minutes=5)).astimezone().strftime('%H:%M:%S %Z') if trading_signals.timestamp else 'N/A' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Overview -->
     <div class="col-md-4">
         <div class="card mb-4">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0">Account Overview</h5>
-                    <span class="badge {% if api_error %}bg-danger{% else %}bg-success{% endif %}">
-                        {{ 'Offline' if api_error else 'Connected' }}
-                    </span>
-                </div>
-                <p class="card-text">Balance: ${{ "%.2f"|format(account_info.balance|float) }}</p>
-                <p class="card-text">Unrealized P/L: ${{ "%.2f"|format(account_info.unrealizedPL|float) }}</p>
-                <p class="card-text">Margin Used: ${{ "%.2f"|format(account_info.marginUsed|float) }}</p>
+                <h5 class="card-title">Account Overview</h5>
+                <p class="card-text">Balance: ${{ "%.2f"|format(account_info.get('balance', 0)|float) }}</p>
+                <p class="card-text">Unrealized P/L: ${{ "%.2f"|format(account_info.get('unrealizedPL', 0)|float) }}</p>
+                <p class="card-text">Margin Used: ${{ "%.2f"|format(account_info.get('marginUsed', 0)|float) }}</p>
+                <button id="testTradingBtn" class="btn btn-warning btn-sm mt-2">
+                    Test Trading Operations
+                </button>
+                <div id="testResults" class="mt-2 small"></div>
             </div>
         </div>
 
@@ -44,58 +142,13 @@
                         Profit Factor
                         <span class="badge bg-info">{{ "%.2f"|format(trading_metrics.profit_factor|float) if trading_metrics.profit_factor else 'N/A' }}</span>
                     </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        Sharpe Ratio
-                        <span class="badge bg-warning">{{ "%.2f"|format(trading_metrics.sharpe_ratio|float) if trading_metrics.sharpe_ratio else 'N/A' }}</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        Max Drawdown
-                        <span class="badge bg-danger">{{ "%.1f%%"|format(trading_metrics.max_drawdown|float) if trading_metrics.max_drawdown else 'N/A' }}</span>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
+    <!-- Open Trades -->
     <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Performance Chart</h5>
-                <canvas id="performanceChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Daily P/L Distribution</h5>
-                <canvas id="pnlDistributionChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Win Rate by Instrument</h5>
-                <canvas id="winRateChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Risk Exposure</h5>
-                <canvas id="riskChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Open Trades</h5>
@@ -117,7 +170,7 @@
                             {% for trade in trades %}
                             <tr>
                                 <td>{{ trade.instrument }}</td>
-                                <td>{{ trade.currentUnits }}</td>
+                                <td>{{ "%d"|format(trade.currentUnits|int) }}</td>
                                 <td>{{ "%.5f"|format(trade.price|float) }}</td>
                                 <td>{{ "%.5f"|format(trade.currentPrice|float) if trade.currentPrice else 'N/A' }}</td>
                                 <td class="{{ 'text-success' if trade.unrealizedPL|float > 0 else 'text-danger' }}">
@@ -147,4 +200,38 @@
         </div>
     </div>
 </div>
+
+<!-- Initialize tooltips and test trading functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Test Trading Button Handler
+    document.getElementById('testTradingBtn').addEventListener('click', function() {
+        this.disabled = true;
+        const resultsDiv = document.getElementById('testResults');
+        resultsDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Testing trading operations...';
+        
+        fetch('/api/test_trading', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            if (data.success) {
+                resultsDiv.innerHTML = `<div class="text-success">✓ ${data.message}</div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="text-danger">✗ ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            this.disabled = false;
+            resultsDiv.innerHTML = '<div class="text-danger">✗ Test failed: Network error</div>';
+        });
+    });
+});
+</script>
 {% endblock %}

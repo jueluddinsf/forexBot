@@ -18,7 +18,7 @@ class OandaClient:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.api = None
-        self.instrument = "EUR_USD"  # Default instrument
+        self.available_pairs = ["EUR_USD", "GBP_USD", "USD_JPY", "USD_CAD"]  # Default pairs
         
         self._validate_credentials()
         self._initialize_api()
@@ -88,25 +88,43 @@ class OandaClient:
             self.logger.error(f"Failed to connect to OANDA API: {str(e)}")
             return False
         
-    def get_market_data(self, count=100):
-        """Get historical market data with retry mechanism"""
+    def get_available_pairs(self):
+        """Get list of available trading pairs"""
         try:
+            r = accounts.AccountInstruments(self.account_id)
+            response = self._make_request(r)
+            
+            if 'instruments' in response:
+                self.available_pairs = [inst['name'] for inst in response['instruments']
+                                     if inst['type'] == 'CURRENCY']
+                return self.available_pairs
+            return []
+        except Exception as e:
+            self.logger.error(f"Error getting available pairs: {str(e)}")
+            return []
+            
+    def get_market_data(self, instrument=None, count=100):
+        """Get historical market data with multi-pair support"""
+        try:
+            if instrument is None:
+                instrument = self.available_pairs[0]
+                
             params = {
                 "count": count,
                 "granularity": "M5"  # 5-minute candles
             }
             
-            r = instruments.InstrumentsCandles(instrument=self.instrument,
+            r = instruments.InstrumentsCandles(instrument=instrument,
                                            params=params)
             response = self._make_request(r)
             
             if 'candles' not in response:
-                self.logger.error("Invalid market data response: 'candles' field missing")
+                self.logger.error(f"Invalid market data response for {instrument}: 'candles' field missing")
                 return None
                 
             candles = response['candles']
             if not candles:
-                self.logger.warning("No candle data received from API")
+                self.logger.warning(f"No candle data received for {instrument}")
                 return None
                 
             data = {
@@ -128,20 +146,23 @@ class OandaClient:
             return data if any(data.values()) else None
             
         except Exception as e:
-            self.logger.error(f"Error getting market data: {str(e)}")
+            self.logger.error(f"Error getting market data for {instrument}: {str(e)}")
             return None
 
-    def execute_trade(self, direction, units):
-        """Execute trade with retry mechanism"""
+    def execute_trade(self, direction, units, instrument=None):
+        """Execute trade with multi-pair support"""
         if not self.verify_connection():
             self.logger.error("Cannot execute trade: Not connected to OANDA API")
             return None
+            
+        if instrument is None:
+            instrument = self.available_pairs[0]
             
         try:
             data = {
                 "order": {
                     "type": "MARKET",
-                    "instrument": self.instrument,
+                    "instrument": instrument,
                     "units": units if direction == "LONG" else -units,
                     "timeInForce": "FOK",
                     "positionFill": "DEFAULT"
@@ -152,14 +173,14 @@ class OandaClient:
             response = self._make_request(r)
             
             if 'orderCreateTransaction' in response:
-                self.logger.info(f"Trade executed successfully: {direction} {units} units")
+                self.logger.info(f"Trade executed successfully: {direction} {units} units of {instrument}")
                 return response
             else:
-                self.logger.error("Invalid trade execution response: missing orderCreateTransaction")
+                self.logger.error(f"Invalid trade execution response for {instrument}: missing orderCreateTransaction")
                 return None
                 
         except Exception as e:
-            self.logger.error(f"Trade execution error: {str(e)}")
+            self.logger.error(f"Trade execution error for {instrument}: {str(e)}")
             return None
 
     def get_open_trades(self):

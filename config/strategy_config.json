@@ -1,0 +1,18 @@
+{
+    "last_optimization": null,
+    "parameters": {
+        "neighbors_count": 8,
+        "feature_count": 4,
+        "volatility_lookback": 20,
+        "trend_strength": 0.3,
+        "max_correlation": 0.7
+    },
+    "metrics": {
+        "sharpe_ratio": null,
+        "win_rate": null,
+        "profit_factor": null,
+        "max_drawdown": null,
+        "total_trades": 0
+    },
+    "optimization_score": null
+}

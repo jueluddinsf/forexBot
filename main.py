@@ -21,6 +21,9 @@ def check_and_execute_trades():
             logger.warning("Failed to get market data")
             return
 
+        # Get current positions
+        current_positions = oanda_client.get_open_trades()
+
         # Get trading signals
         lorentzian_signal = lorentzian.get_signal(market_data)
         ema_signal = tech_indicators.check_ema_filter(market_data)
@@ -28,13 +31,20 @@ def check_and_execute_trades():
 
         # Check if signals align for a trade
         if lorentzian_signal and lorentzian_signal == ema_signal == sma_signal:
-            # Check risk parameters
-            if risk_manager.can_trade():
+            # Enhanced risk management check
+            can_trade, reason = risk_manager.can_trade(
+                market_data=market_data,
+                current_positions=current_positions
+            )
+            
+            if can_trade:
                 # Get account info for position sizing
                 account_info = oanda_client.get_account_info()
                 if account_info:
+                    # Calculate position size with market data consideration
                     position_size = risk_manager.calculate_position_size(
-                        float(account_info['balance'])
+                        float(account_info['balance']),
+                        market_data=market_data
                     )
                     
                     # Execute trade
@@ -48,6 +58,8 @@ def check_and_execute_trades():
                             )
                     else:
                         logger.error("Trade execution failed")
+            else:
+                logger.info(f"Trade prevented by risk management: {reason}")
                         
     except Exception as e:
         logger.error(f"Error in trading logic: {str(e)}")

@@ -220,3 +220,28 @@ class OandaClient:
         except Exception as e:
             self.logger.error(f"Error closing trade {trade_id}: {str(e)}")
             return False
+
+    def get_position_data(self, instrument):
+        """Get historical price data for a specific position"""
+        if not self.verify_connection():
+            self.logger.warning("Cannot get position data: Not connected to OANDA API")
+            return None
+            
+        try:
+            params = {
+                "count": 100,  # Last 100 candles
+                "granularity": "M5"  # 5-minute candles
+            }
+            
+            r = instruments.InstrumentsCandles(instrument=instrument,
+                                           params=params)
+            response = self._make_request(r)
+            
+            if 'candles' in response:
+                return [float(candle['mid']['c']) for candle in response['candles'] 
+                       if candle['complete']]
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error getting position data: {str(e)}")
+            return None

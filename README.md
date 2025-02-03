@@ -1,5 +1,10 @@
 # Selenium WebDriver with Java: A Comprehensive Guide
 
+**Created by:** Gabriela Mejia  
+**Date:** February 1, 2025
+
+---
+
 ## Table of Contents
 1. [Introduction to Selenium WebDriver](#introduction-to-selenium-webdriver)
 2. [Setting Up the Environment](#setting-up-the-environment)
@@ -1899,5 +1904,3 @@ These additions provide:
 3. Best practices for organizing Selenium projects in Eclipse
 4. Performance optimization tips for Eclipse when working with Selenium
 5. Advanced test management and reporting capabilities
-
-Would you like me to add more details to any of these sections or add other topics?
